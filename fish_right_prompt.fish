@@ -110,6 +110,8 @@ function terraform::workspace
 end
 
 function fish_right_prompt
+    # Save the last status for later (do this before anything else)
+    set -l last_status $status
 
 	if test "$theme_complete_path" = "yes"
 		set cwd (prompt_pwd)
@@ -123,21 +125,49 @@ function fish_right_prompt
 		end
 	end
 
+    set -q fish_prompt_pwd_dir_length
+    or set -l fish_prompt_pwd_dir_length 4
+
+    if [ $fish_prompt_pwd_dir_length -gt 1 ]
+        set cwd (string replace -ar '(^[^/]+|\.?[^/]{'"$fish_prompt_pwd_dir_length"'})[^/]*/' '$1/' "$cwd")
+    end
+
+    if [ $last_status -ne 0 ]
+		printf (red)$last_status(yellow)" | "(off)
+	end
+
 	command -sq kubectl; and k8s::current_context >/dev/null 2>/dev/null; and begin
 		set -l k8s_namespace (k8s::current_namespace)
 		if test -z "$k8s_namespace"
-			printf (yellow)"("(dim)(k8s::current_context)(yellow)") "(off)
+			printf (dim)(k8s::current_context)(yellow)" | "(off)
 		else
-			printf (yellow)"("(dim)(k8s::current_context)"/$k8s_namespace"(yellow)") "(off)
+			printf (dim)(k8s::current_context)"/$k8s_namespace"(yellow)" | "(off)
 		end
 	end
 
 	if terraform::workspace
 		set terraform_workspace_name (command cat .terraform/environment)
-		printf (yellow)"("(dim)$terraform_workspace_name(yellow)") "(off)
+		printf (dim)$terraform_workspace_name(yellow)" | "(off)
 	end
 
-	printf (yellow)"("(dim)$cwd(yellow)") "(off)
-	printf (dim)(date +%H(yellow):(dim)%M(yellow):(dim)%S)(off)
+	if git::is_repo
+		set -l branch (git::branch_name ^/dev/null)
+		set -l ref (git show-ref --head --abbrev | awk '{print substr($0,0,7)}' | sed -n 1p)
+
+		if command git symbolic-ref HEAD > /dev/null ^/dev/null
+			if git::is_staged
+				printf (dim)"$branch"(off)
+			else
+				printf (dim)"$branch"(off)
+			end
+		else
+			printf (dim)"$ref"(off)
+		end
+
+		printf (yellow)" | "(off)
+	end
+
+	printf (dim)$cwd(yellow)" | "(off)
+	printf (dim)(date +%H:%M:%S)(off)
 
 end

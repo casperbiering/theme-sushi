@@ -1,6 +1,14 @@
 function fish_prompt
+    # Save the last status for later (do this before anything else)
+    set -l last_status $status
+
+    # Use a simple prompt on dumb terminals.
+    if [ "$TERM" = "dumb" ]
+        echo "> "
+        return
+    end
+
 	set -l symbol "λ "
-	set -l code $status
 
 	if test -n "$ssh_client"
 		set -l host (hostname -s)
@@ -10,26 +18,16 @@ function fish_prompt
 
 	if git::is_repo
 		set -l branch (git::branch_name ^/dev/null)
-		set -l ref (git show-ref --head --abbrev | awk '{print substr($0,0,7)}' | sed -n 1p)
+		set -l anygit 0
 
 		if git::is_stashed
 			echo -n -s (white)"^"(off)
+			set anygit 1
 		end
-
-		echo -n -s (red)"("(off)
 
 		if git::is_dirty
 			printf (white)"*"(off)
-		end
-
-		if command git symbolic-ref HEAD > /dev/null ^/dev/null
-			if git::is_staged
-				printf (cyan)"$branch"(off)
-			else
-				printf (yellow)"$branch"(off)
-			end
-		else
-			printf (dim)"$ref"(off)
+			set anygit 1
 		end
 
 		for remote in (git remote)
@@ -38,21 +36,26 @@ function fish_prompt
 
 			if test $ahead_count -ne 0; or test $behind_count -ne 0; and test (git remote | wc -l) -gt 1
 				echo -n -s " "(orange)$remote(off)
+				set anygit 1
 			end
 
 			if test $ahead_count -ne 0
-				echo -n -s (white)" +"$ahead_count(off)
+				echo -n -s (white)"+"$ahead_count(off)
+				set anygit 1
 			end
 
 			if test $behind_count -ne 0
-				echo -n -s (white)" -"$behind_count(off)
+				echo -n -s (white)"-"$behind_count(off)
+				set anygit 1
 			end
 		end
 
-		echo -n -s (red)") "(off)
+		if test "$anygit" = 1
+			echo -n " "
+		end
 	end
 
-	if test "$code" = 0
+	if test "$last_status" = 0
 		echo -n -s (red)"$symbol"(off)
 	else
 		echo -n -s (dim)"$symbol"(off)
