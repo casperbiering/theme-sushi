@@ -1,30 +1,30 @@
 # Colors
 function orange
-    set_color -o ee5819
+	set_color -o ee5819
 end
 
 function yellow
-    set_color -o b58900
+	set_color -o b58900
 end
 
 function red
-    set_color -o d30102
+	set_color -o d30102
 end
 
 function cyan
-    set_color -o 2aa198
+	set_color -o 2aa198
 end
 
 function white
-    set_color -o fdf6e3
+	set_color -o fdf6e3
 end
 
 function dim
-    set_color -o 4f4f4f
+	set_color -o 4f4f4f
 end
 
 function off
-    set_color -o normal
+	set_color -o normal
 end
 
 # Git
@@ -89,11 +89,11 @@ end
 # Kubernetes
 
 function k8s::current_context
-    command kubectl config current-context
+	command kubectl config current-context
 end
 
 function k8s::current_namespace
-    command kubectl config view --minify -o jsonpath='{.contexts[0].context.namespace}'
+	command kubectl config view --minify -o jsonpath='{.contexts[0].context.namespace}'
 end
 
 # Terraform
@@ -110,8 +110,8 @@ function terraform::workspace
 end
 
 function fish_right_prompt
-    # Save the last status for later (do this before anything else)
-    set -l last_status $status
+	# Save the last status for later (do this before anything else)
+	set -l last_status $status
 
 	if test "$theme_complete_path" = "yes"
 		set cwd (prompt_pwd)
@@ -125,29 +125,41 @@ function fish_right_prompt
 		end
 	end
 
-    set -q fish_prompt_pwd_dir_length
-    or set -l fish_prompt_pwd_dir_length 4
+	set -q fish_prompt_pwd_dir_length
+	or set -l fish_prompt_pwd_dir_length 4
 
-    if [ $fish_prompt_pwd_dir_length -gt 1 ]
-        set cwd (string replace -ar '(^[^/]+|\.?[^/]{'"$fish_prompt_pwd_dir_length"'})[^/]*/' '$1/' "$cwd")
-    end
+	if [ $fish_prompt_pwd_dir_length -gt 1 ]
+		set cwd (string replace -ar '(^[^/]+|\.?[^/]{'"$fish_prompt_pwd_dir_length"'})[^/]*/' '$1/' "$cwd")
+	end
 
-    if [ $last_status -ne 0 ]
-		printf (red)$last_status(yellow)" | "(off)
+	if [ $last_status -ne 0 ]
+		printf " "(red)$last_status
+	end
+
+	if [ "$theme_display_cmd_duration" = "yes" ]
+		if [ "$CMD_DURATION" -lt 100 ]
+			# none
+		else if [ "$CMD_DURATION" -lt 60000 ]
+			printf " "(dim)(math "floor($CMD_DURATION/1000*10)/10")"s"
+		else if [ "$CMD_DURATION" -lt 3600000 ]
+			printf " "(dim)(math "floor($CMD_DURATION/60000*10)/10")"m"
+		else
+			printf " "(dim)(math "floor($CMD_DURATION/3600000*10)/10")"h"
+		end
 	end
 
 	command -sq kubectl; and k8s::current_context >/dev/null 2>/dev/null; and begin
 		set -l k8s_namespace (k8s::current_namespace)
 		if test -z "$k8s_namespace"
-			printf (dim)(k8s::current_context)(yellow)" | "(off)
+			printf " "(cyan)(k8s::current_context)
 		else
-			printf (dim)(k8s::current_context)"/$k8s_namespace"(yellow)" | "(off)
+			printf " "(cyan)(k8s::current_context)"/$k8s_namespace"
 		end
 	end
 
 	if terraform::workspace
 		set terraform_workspace_name (command cat .terraform/environment)
-		printf (dim)$terraform_workspace_name(yellow)" | "(off)
+		printf " "(green)$terraform_workspace_name
 	end
 
 	if git::is_repo
@@ -156,18 +168,19 @@ function fish_right_prompt
 
 		if command git symbolic-ref HEAD > /dev/null ^/dev/null
 			if git::is_staged
-				printf (dim)"$branch"(off)
+				printf " "(orange)"$branch"
 			else
-				printf (dim)"$branch"(off)
+				printf " "(orange)"$branch"
 			end
 		else
-			printf (dim)"$ref"(off)
+			printf " "(orange)"$ref"
 		end
-
-		printf (yellow)" | "(off)
 	end
 
-	printf (dim)$cwd(yellow)" | "(off)
-	printf (dim)(date +%H:%M:%S)(off)
+	printf " "(yellow)$cwd
+
+	printf " "(dim)(date +%H:%M:%S)
+
+	printf (off)
 
 end
