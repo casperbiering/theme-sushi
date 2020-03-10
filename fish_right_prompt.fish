@@ -179,6 +179,12 @@ function fish_right_prompt
 
 	printf " "(yellow)$cwd
 
+	if test -n "$ssh_client"
+		set -l host (hostname -s)
+		set -l who (whoami)
+		echo -n -s (red)" ($who:$host)"(off)
+	end
+
 	printf " "(dim)(date +%H:%M:%S)
 
 	printf (off)
