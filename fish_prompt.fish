@@ -50,9 +50,9 @@ function fish_prompt
 	end
 
 	if test "$last_status" = 0
-		echo -n -s (red)"$symbol"(off)
+		echo -n -s (green)"$symbol"(off)
 	else
-		echo -n -s (dim)"$symbol"(off)
+		echo -n -s (red)"$symbol"(off)
 	end
 
 end

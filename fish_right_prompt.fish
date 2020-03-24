@@ -8,7 +8,7 @@ function yellow
 end
 
 function red
-	set_color -o d30102
+	set_color -o red
 end
 
 function cyan
@@ -17,6 +17,10 @@ end
 
 function white
 	set_color -o fdf6e3
+end
+
+function green
+	set_color -o green
 end
 
 function dim
